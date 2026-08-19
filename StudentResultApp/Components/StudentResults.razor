@@ -1,6 +1,9 @@
 ﻿@page "/student-results"
 @rendermode InteractiveServer
 @using StudentResultApp.Models
+@using StudentResultApp.Services
+@inject StudentService StudentService
+@inject StudentResultService StudentResultService
 
 <div class="card shadow-sm mb-4">
 
@@ -10,52 +13,48 @@
 
     <div class="card-body">
 
-<div class="card p-4 shadow-sm">
+        <div class="card p-4 shadow-sm">
 
-    <div class="row mb-3">
+            <div class="row mb-3">
 
-        <div class="col-md-6">
-            <label class="form-label">Student Number</label>
+                <div class="col-md-6">
+                    <label class="form-label">Student</label>
+                    <select class="form-select" @bind="selectedStudentId">
+                        <option value="0">-- Select Student --</option>
+                        @foreach (var s in allStudents)
+                        {
+                            <option value="@s.StudentID">@s.FirstName @s.LastName</option>
+                        }
+                    </select>
+                </div>
 
-            <input class="form-control"
-                   @bind="student.StudentNumber" />
-        </div>
+                <div class="col-md-6">
+                    <label class="form-label">Module</label>
+                    <input class="form-control" @bind="newResult.Module" />
+                </div>
 
-        <div class="col-md-6">
-            <label class="form-label">Full Name</label>
+            </div>
 
-            <input class="form-control"
-                   @bind="student.FullName" />
-        </div>
+            <div class="row mb-3">
 
-    </div>
+                <div class="col-md-6">
+                    <label class="form-label">Mark</label>
+                    <input type="number" class="form-control" @bind="newResult.Mark" />
+                </div>
 
-    <div class="row mb-3">
+            </div>
 
-        <div class="col-md-6">
-            <label class="form-label">Module</label>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <p class="text-danger">@errorMessage</p>
+            }
 
-            <input class="form-control"
-                   @bind="student.Module" />
-        </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Mark</label>
-
-            <input type="number"
-                   class="form-control"
-                   @bind="student.Mark" />
-        </div>
-
-    </div>
-
-    <button class="btn btn-primary"
-            @onclick="AddStudent">
+            <button class="btn btn-primary" @onclick="AddResult">
                 Save Student Result
-    </button>
+            </button>
 
-</div>
-</div>  
+        </div>
+    </div>
 </div>
 
 <br />
@@ -63,34 +62,29 @@
 <table class="table table-bordered table-striped">
 
     <thead class="table-dark">
-
         <tr>
-            <th>Student No.</th>
             <th>Full Name</th>
             <th>Module</th>
             <th>Mark</th>
             <th>Result</th>
         </tr>
-
     </thead>
 
     <tbody>
-
-        @if (students.Count == 0)
+        @if (results.Count == 0)
         {
             <tr>
-                <td colspan="5" class="text-center text-muted">
+                <td colspan="4" class="text-center text-muted">
                     No student results captured yet.
                 </td>
             </tr>
         }
         else
         {
-            @foreach (var item in students)
+            @foreach (var item in results)
             {
                 <tr>
-                    <td>@item.StudentNumber</td>
-                    <td>@item.FullName</td>
+                    <td>@item.FirstName @item.LastName</td>
                     <td>@item.Module</td>
                     <td>@item.Mark</td>
                     <td>
@@ -106,28 +100,40 @@
                 </tr>
             }
         }
-
     </tbody>
 
 </table>
 
 @code {
 
-    private Student student = new();
+    private List<Student> allStudents = new();
+    private List<StudentResult> results = new();
+    private StudentResult newResult = new();
+    private int selectedStudentId;
+    private string? errorMessage;
 
-    private List<Student> students = new();
-
-    private void AddStudent()
+    protected override void OnInitialized()
     {
-        students.Add(new Student
-        {
-            StudentNumber = student.StudentNumber,
-            FullName = student.FullName,
-            Module = student.Module,
-            Mark = student.Mark
-        });
-
-        student = new Student();
+        allStudents = StudentService.GetAll();
+        results = StudentResultService.GetAll();
     }
 
+    private void AddResult()
+    {
+        errorMessage = null;
+
+        if (selectedStudentId == 0)
+        {
+            errorMessage = "Please select a student.";
+            return;
+        }
+
+        newResult.StudentID = selectedStudentId;
+        StudentResultService.Add(newResult);
+
+        results = StudentResultService.GetAll();
+
+        newResult = new StudentResult();
+        selectedStudentId = 0;
+    }
 }

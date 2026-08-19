@@ -8,6 +8,10 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddScoped<ModuleService>();
 
+builder.Services.AddScoped<StudentService>();
+
+builder.Services.AddScoped<StudentResultService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
